@@ -1,2 +1,4 @@
 /data/*
 /venv
+/scripts/__pycache__
+/models/*
