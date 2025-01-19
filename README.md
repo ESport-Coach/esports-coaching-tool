@@ -16,6 +16,7 @@ esports-coaching-tool/
 │   ├── models.py         # Neural network architecture
 │   ├── process_video.py  # Video processing utilities
 │   ├── train_model.py    # Model training script
+│   ├── video_analyzer.py # Real-time video analysis
 │   └── utils.py         # Common utilities
 ├── venv/                # Python virtual environment
 ├── main.py             # Main application entry point
@@ -74,7 +75,7 @@ Options:
 - `--learning-rate`: Learning rate (default: 0.001)
 - `--validation-split`: Validation data fraction (default: 0.2)
 
-### Analyze Gameplay
+### Analyze Frames
 
 Analyze extracted frames using a trained model:
 ```bash
@@ -96,15 +97,34 @@ Options:
 - `--confidence-threshold`: Minimum confidence for predictions (default: 0.7)
 - `--batch-size`: Batch size for inference (default: 32)
 
+### Stream Video Analysis
+
+Analyze video in real-time without saving frames:
+```bash
+python main.py analyze-video path/to/video.mp4 \
+    --model models/game_state_cnn.pth \
+    --output output/analysis.json \
+    --confidence-threshold 0.7 \
+    --skip-frames 2
+```
+
+Options:
+- `--model`: Path to trained model (required)
+- `--output`: Path for analysis output JSON
+- `--confidence-threshold`: Minimum confidence for predictions (default: 0.7)
+- `--skip-frames`: Number of frames to skip between predictions (default: 0)
+
 ## Output Metrics
 
 The analysis provides several metrics:
+
+### Frame Analysis Output
 - Time distribution across different game states
 - Average duration of each state
 - State transition patterns
 - Confidence scores for predictions
 
-Example output:
+Example frame analysis output:
 ```json
 {
     "state_distribution": {
@@ -118,6 +138,44 @@ Example output:
         "Looting": 12.3,
         "Map": 3.1,
         "Interface": 2.8
+    }
+}
+```
+
+### Video Analysis Output
+- Video statistics (duration, FPS, total frames)
+- Time spent in each state (seconds and percentages)
+- Processing performance metrics
+- Frame counts per state
+
+Example video analysis output:
+```json
+{
+    "video_stats": {
+        "total_frames": 3600,
+        "fps": 60.0,
+        "duration_seconds": 60.0,
+        "processing_time_seconds": 15.3
+    },
+    "state_analysis": {
+        "frame_counts": {
+            "Gameplay": 2340,
+            "Looting": 720,
+            "Map": 360,
+            "Interface": 180
+        },
+        "durations": {
+            "Gameplay": 39.0,
+            "Looting": 12.0,
+            "Map": 6.0,
+            "Interface": 3.0
+        },
+        "percentages": {
+            "Gameplay": 65.0,
+            "Looting": 20.0,
+            "Map": 10.0,
+            "Interface": 5.0
+        }
     }
 }
 ```

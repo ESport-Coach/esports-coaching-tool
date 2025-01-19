@@ -10,7 +10,20 @@ from tqdm import tqdm
 from dataclasses import dataclass
 import numpy as np
 
+from scripts.data_models import GameStateCNN
+
 logger = logging.getLogger(__name__)
+
+@dataclass
+class VideoAnalysisResult:
+    """Contains aggregated analysis results for a video."""
+    total_frames: int
+    fps: float
+    duration_seconds: float
+    state_frames: Dict[str, int]
+    state_duration: Dict[str, float]
+    state_percentages: Dict[str, float]
+    processing_time: float
 
 @dataclass
 class PredictionResult:
@@ -53,6 +66,13 @@ class GameStatePredictor:
                 logger.warning("Loading legacy model format - label map not included")
                 
             self.reverse_label_map = {v: k for k, v in self.label_map.items()}
+
+            self.model = GameStateCNN(num_classes=len(self.label_map), input_size=self.input_size)
+            
+            self.model.load_state_dict(self.model_state)
+            self.model.to(self.device)
+            self.model.eval()
+
             logger.info(f"Model loaded successfully with {len(self.label_map)} classes")
             
         except Exception as e:

@@ -8,6 +8,7 @@ import json
 from scripts.utils import FrameExtractor
 from scripts.inference import GameStatePredictor
 from scripts.train_model import ModelTrainer
+from scripts.video_analyzer import VideoStreamAnalyzer
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +30,27 @@ def process_video_command(args):
     output_dir = extractor.extract_frames(args.video)
     logger.info(f"Extracted frames to {output_dir}")
     return output_dir
+
+def analyze_video_command(args):
+    """Analyze video without saving frames to disk."""
+    analyzer = VideoStreamAnalyzer(
+        model_path=args.model,
+        confidence_threshold=args.confidence_threshold,
+        skip_frames=args.skip_frames
+    )
+    
+    try:
+        result = analyzer.analyze_video(args.video, args.output)
+        logger.info("Analysis Summary:")
+        logger.info(f"Video duration: {result.duration_seconds:.1f} seconds")
+        logger.info(f"Processing time: {result.processing_time:.1f} seconds")
+        logger.info("Time spent in each state:")
+        for state, duration in result.state_duration.items():
+            percentage = result.state_percentages[state]
+            logger.info(f"  {state}: {duration:.1f} seconds ({percentage:.1f}%)")
+    except Exception as e:
+        logger.error(f"Video analysis failed: {str(e)}")
+        raise
 
 def train_model_command(args):
     """Train a new model."""
@@ -123,6 +145,20 @@ def main():
     analyze_parser.add_argument('--fps', type=int, default=5,
                                help='Frames per second (if processing video)')
     
+    # Analyze video (stream) command
+    analyze_video_parser = subparsers.add_parser('analyze-video', 
+                                                 help='Analyze video without saving frames')
+    analyze_video_parser.add_argument('video', type=str, 
+                                      help='Path to video file')
+    analyze_video_parser.add_argument('--model', type=str, required=True, 
+                                      help='Path to trained model')
+    analyze_video_parser.add_argument('--output', type=str, 
+                                      help='Path for analysis output JSON')
+    analyze_video_parser.add_argument('--confidence-threshold', type=float, default=0.7, 
+                                      help='Minimum confidence for predictions')
+    analyze_video_parser.add_argument('--skip-frames', type=int, default=0, 
+                                      help='Number of frames to skip between predictions')
+
     args = parser.parse_args()
     
     if not args.command:
@@ -142,6 +178,8 @@ def main():
             train_model_command(args)
         elif args.command == 'analyze':
             analyze_command(args)
+        elif args.command == 'analyze-video':
+            analyze_video_command(args)
             
     except Exception as e:
         logger.error(f"Command failed: {str(e)}")
